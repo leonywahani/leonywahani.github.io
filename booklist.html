@@ -1,0 +1,172 @@
+<?php
+session_start();
+include ('koneksi.php');
+
+
+if (!isset($_SESSION['username'])) {
+    $_SESSION['msg'] = "You must log in first";
+    header('location: login.php');
+    exit();
+}
+
+if (isset($_GET['logout'])) {
+    session_destroy();
+    unset($_SESSION['username']);
+    header('location: login.php');
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>BookZen</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://fonts.googleapis.com/css2?family=Space+Grotesk&display=swap' rel='stylesheet'>
+    <script src="BoLi.js"></script>
+</head>
+
+<body>
+
+<nav>
+    <div class="top">
+        <div class="judul"><a href='index.php'>BookZen</a></div>
+        <div class="menu">
+            <ul>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="booklist.php">Book List</a></li>
+                <li><a href="our team.php">Our Team</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container" id="container">
+    
+    <div id="taskListContainer">
+        <div id="technologyTasks">
+          
+        </div>
+        <div id="psychologyTasks">
+            
+        </div>
+        <div id="educationTasks">
+         
+        </div>
+    </div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="tengah">
+        <div class="container">
+            <h4>Edit</h4>
+            <form id="taskFormModal">
+                <input type="hidden" value="" id="taskIndexModal">
+                <input style="width: 350px;" type="text" id="taskInputModal" placeholder="Edit task...">
+                <select id="taskCategoryModal">
+                    <option value="">Select Category</option>
+                    <option value="technology">Technology</option>
+                    <option value="psychology">Psychology</option>
+                    <option value="education">Education</option>
+                </select>
+
+                <input type="datetime-local" id="taskReminderModal">
+                <select id="taskPriorityModal">
+                    <option value="">Select Genre</option>
+                    <option value="Sains Komputer">Sains Komputer</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+
+                <button type="submit" id="EditTaskModal">Edit Task</button>
+                <button type="button" id="close-modal" class="modal1">Close Modal</button>
+                <script>
+                    document.getElementById('close-modal').addEventListener('click', function () {
+                        document.getElementById('modal').style.display = 'none';
+                    })
+                </script>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="tengah">
+    <div class="container" id="container">
+        <button id="button-logout" class="buttonlog">Logout</button>
+
+        <h1>BookZen</h1>
+        <form id="taskForm">
+            <select id="taskCategory">
+                <option value="">Select Category</option>
+                <option value="technology">Technology</option>
+                <option value="psychology">Psychology</option>
+                <option value="education">Education</option>
+            </select>
+
+            <select id="taskPriority">
+                <option value="">Select Genre</option>
+             
+            </select>
+            <button type="button" id="Search">Search</button>
+        </form>
+
+        <ul id="taskList">
+        </ul>
+    </div>
+</div>
+
+<script>
+    const genreData = {
+        technology: [
+            { name: "Sains Komputer", links: ["https://www.researchgate.net/profile/Bruri-Laimeheriwa/publication/331372559_BUKU_AJAR_KOMPUTER/links/5c761429a6fdcc47159e89be/BUKU-AJAR-KOMPUTER.pdf"] },
+            { name: "Pengembangan Perangkat Lunak", links: ["https://www.researchgate.net/profile/Lila-Setiyani/publication/333209319_REKAYASA_PERANGKAT_LUNAK_Software_Engineering/links/5ce25dba299bf14d95a96d69/REKAYASA-PERANGKAT-LUNAK-Software-Engineering.pdf"] },
+            { name: "Kecerdasan Buatan", links: ["http://eprints.umsida.ac.id/9443/1/Bahan%20Ajar%20Jamal%20Indah.pdf"] }
+        ],
+        psychology: [
+            { name: "Psikologi Sosial", links: ["https://www.researchgate.net/profile/Faturochman-Faturochman/publication/336572987_PSIKOLOGI_SOSIAL/links/5da66543299bf1c1e4c37612/PSIKOLOGI-SOSIAL.pdf"] },
+            { name: "Psikologi Klinis", links: ["https://repository.binawan.ac.id/2232/2/PSIKOLOGI%20KLINIS-New.pdf"] },
+            { name: "Psikologi Perkembangan", links: ["https://repository.iainponorogo.ac.id/489/2/LAYOUT%20Buku%20Kayyis_cetak.pdf"] }
+        ],
+        education: [
+            { name: "Psikologi Pendidikan", links: ["https://staia.ac.id/wp-content/uploads/2021/11/Psikologi-Pendidikan-PDFDrive-.pdf"] },
+            { name: "Manajemen Pendidikan", links: ["https://etheses.uinsgd.ac.id/40789/1/MANAJEMEN%20PENDIDIKAN%20CETAK.pdf"] },
+            { name: "Evaluasi Pendidikan", links: ["https://eprints.uad.ac.id/37727/1/Binder1-Evaluasi%20Pendidikan-Revisi-Protection.pdf"] }
+        ]
+    };
+
+    const taskCategory = document.getElementById('taskCategory');
+    const taskPriority = document.getElementById('taskPriority');
+
+    taskCategory.addEventListener('change', function () {
+        const category = this.value;
+        const genreSelect = document.getElementById('taskPriority');
+        genreSelect.innerHTML = "<option value=''>Select Genre</option>";
+        if (category !== "") {
+            genreData[category].forEach(genre => {
+                const option = document.createElement('option');
+                option.textContent = genre.name;
+                genreSelect.appendChild(option);
+            });
+        }
+    });
+
+    document.getElementById('Search').addEventListener('click', function() {
+        const selectedCategory = taskCategory.value;
+        const selectedGenre = taskPriority.value;
+
+        const links = genreData[selectedCategory].find(genre => genre.name === selectedGenre)?.links;
+        if (links) {
+            links.forEach(link => window.open(link, "_blank"));
+        } else {
+            alert('Link tidak ditemukan.');
+        }
+    });
+
+    document.getElementById('button-logout').addEventListener('click', function () {
+        localStorage.removeItem('logged-in');
+        window.location.href = 'login.php';
+    });
+</script>
+</body>
+</html>
